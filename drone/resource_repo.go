@@ -52,12 +52,46 @@ func resourceRepo() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 
-		//		Create: resourceRepoCreate,
-		Read: resourceRepoRead,
-		//		Update: resourceRepoUpdate,
-		//		Delete: resourceRepoDelete,
-		//		Exists: resourceRepoExists,
+		Create: resourceRepoCreate,
+		Read:   resourceRepoRead,
+		Update: resourceRepoUpdate,
+		Delete: resourceRepoDelete,
+		Exists: resourceRepoExists,
 	}
+}
+func resourceRepoCreate(data *schema.ResourceData, meta interface{}) error {
+	client := meta.(drone.Client)
+
+	// Refresh repository list
+	if _, err := client.RepoListSync(); err != nil {
+		return err
+	}
+
+	owner, repo, err := utils.ParseRepo(data.Get("repository").(string))
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Repo(owner, repo)
+
+	if err != nil {
+		return err
+	}
+	repository, err := client.RepoUpdate(owner, repo, createRepo(data))
+
+	if err != nil {
+		return err
+	}
+	if !resp.Active {
+		_, err = client.RepoEnable(owner, repo)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return readRepo(data, repository, err)
 }
 
 func resourceRepoRead(data *schema.ResourceData, meta interface{}) error {
@@ -75,6 +109,69 @@ func resourceRepoRead(data *schema.ResourceData, meta interface{}) error {
 	}
 
 	return readRepo(data, repository, err)
+}
+
+func resourceRepoUpdate(data *schema.ResourceData, meta interface{}) error {
+	client := meta.(drone.Client)
+
+	owner, repo, err := utils.ParseRepo(data.Get("repository").(string))
+
+	if err != nil {
+		return err
+	}
+
+	repository, err := client.RepoUpdate(owner, repo, createRepo(data))
+
+	return readRepo(data, repository, err)
+}
+
+func resourceRepoDelete(data *schema.ResourceData, meta interface{}) error {
+	client := meta.(drone.Client)
+
+	owner, repo, err := utils.ParseRepo(data.Id())
+
+	if err != nil {
+		return err
+	}
+
+	return client.RepoDisable(owner, repo)
+}
+
+func resourceRepoExists(data *schema.ResourceData, meta interface{}) (bool, error) {
+	client := meta.(drone.Client)
+
+	owner, repo, err := utils.ParseRepo(data.Id())
+
+	if err != nil {
+		return false, err
+	}
+
+	repository, err := client.Repo(owner, repo)
+	if err != nil {
+		return false, fmt.Errorf("failed to read Drone Repo: %s/%s", owner, repo)
+	}
+
+	exists := (repository.Namespace == owner) && (repository.Name == repo)
+
+	return exists, err
+}
+
+func createRepo(data *schema.ResourceData) (repository *drone.RepoPatch) {
+	trusted := data.Get("trusted").(bool)
+	protected := data.Get("protected").(bool)
+	timeout := int64(data.Get("timeout").(int))
+	visibility := data.Get("visibility").(string)
+	config := data.Get("configuration").(string)
+
+	repository = &drone.RepoPatch{
+		Config:     &config,
+		Protected:  &protected,
+		Trusted:    &trusted,
+		Timeout:    &timeout,
+		Visibility: &visibility,
+	}
+
+	return
 }
 
 func readRepo(data *schema.ResourceData, repository *drone.Repo, err error) error {
