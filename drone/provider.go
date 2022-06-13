@@ -24,12 +24,14 @@ func Provider() *schema.Provider {
 			"token": {
 				Type:        schema.TypeString,
 				Required:    true,
+				Sensitive:   true,
 				Description: "API Token for the drone server",
 				DefaultFunc: schema.EnvDefaultFunc("DRONE_TOKEN", nil),
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"drone_repo": resourceRepo(),
+			"drone_repo":     resourceRepo(),
+			"drone_template": resourceTemplate(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"drone_template": dataSourceTemplate(),
