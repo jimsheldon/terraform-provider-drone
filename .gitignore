@@ -1,4 +1,5 @@
 .DS_Store
+.terraform.lock.hcl
 terraform-provider-drone
 bin
 
