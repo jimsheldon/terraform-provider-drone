@@ -2,7 +2,6 @@ package drone
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/drone/drone-go/drone"
@@ -50,6 +49,7 @@ func resourceTemplateCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
+	name := d.Get("name").(string)
 	namespace := d.Get("namespace").(string)
 	template := &drone.Template{
 		Name: d.Get("name").(string),
@@ -60,6 +60,8 @@ func resourceTemplateCreate(ctx context.Context, d *schema.ResourceData, m inter
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	d.SetId(namespace + "/" + name)
 
 	resourceTemplateRead(ctx, d, m)
 
@@ -83,9 +85,6 @@ func resourceTemplateRead(ctx context.Context, d *schema.ResourceData, m interfa
 	if err := d.Set("data", template.Data); err != nil {
 		return diag.FromErr(err)
 	}
-
-	id := strconv.Itoa(d.Get("id").(int))
-	d.SetId(id)
 
 	return diags
 }
