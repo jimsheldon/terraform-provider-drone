@@ -1,11 +1,12 @@
 package drone
 
 import (
+	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 
 	"github.com/drone/drone-go/drone"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jackspirou/syscerts"
 	"golang.org/x/oauth2"
@@ -36,12 +37,15 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"drone_template": dataSourceTemplate(),
 		},
-		ConfigureFunc: providerConfigureFunc,
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigureFunc(data *schema.ResourceData) (interface{}, error) {
+func providerConfigure(ctx context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	config := new(oauth2.Config)
+
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
 	certs := syscerts.SystemRootsPool()
 	tlsConfig := &tls.Config{
@@ -60,11 +64,16 @@ func providerConfigureFunc(data *schema.ResourceData) (interface{}, error) {
 		Proxy:           http.ProxyFromEnvironment,
 	}
 
-	client := drone.NewClient(data.Get("server").(string), auther)
-
-	if _, err := client.Self(); err != nil {
-		return nil, fmt.Errorf("drone client failed: %s", err)
+	server := data.Get("server").(string)
+	client := drone.NewClient(server, auther)
+	_, err := client.Self()
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to create Drone client",
+			Detail:   "Unable to authenticate with Drone server at " + server,
+		})
 	}
 
-	return client, nil
+	return client, diags
 }
