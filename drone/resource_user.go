@@ -84,7 +84,6 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	//	user, err := client.User(d.Get("login").(string))
 	user, err := client.User(d.Id())
 	if err != nil {
 		return diag.FromErr(err)

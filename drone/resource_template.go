@@ -2,6 +2,7 @@ package drone
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/drone/drone-go/drone"
@@ -33,7 +34,7 @@ func resourceTemplate() *schema.Resource {
 		},
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		CreateContext: resourceTemplateCreate,
@@ -74,15 +75,23 @@ func resourceTemplateRead(ctx context.Context, d *schema.ResourceData, m interfa
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	name := d.Get("name").(string)
-	namespace := d.Get("namespace").(string)
+	templateId := d.Id()
+	parts := strings.SplitN(templateId, "/", 2)
+	namespace := parts[0]
+	name := parts[1]
 
 	template, err := client.Template(namespace, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("template", template); err != nil {
+	if err := d.Set("name", name); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("namespace", namespace); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("data", template.Data); err != nil {
 		return diag.FromErr(err)
 	}
 
