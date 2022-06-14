@@ -2,7 +2,6 @@ package drone
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -13,10 +12,6 @@ func dataSourceTemplate() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceTemplateRead,
 		Schema: map[string]*schema.Schema{
-			"id": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -51,8 +46,7 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, m inter
 		return diag.FromErr(err)
 	}
 
-	id := strconv.Itoa(d.Get("id").(int))
-	d.SetId(id)
+	d.SetId(namespace + "/" + name)
 
 	return diags
 }
