@@ -1,21 +1,21 @@
 package drone
 
 import (
-	"fmt"
-
-	"terraform-provider-drone/drone/utils"
+	"context"
+	"time"
 
 	"github.com/drone/drone-go/drone"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"login": {
+			"last_updated": {
 				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Optional: true,
+				Computed: true,
 			},
 			"active": {
 				Type:     schema.TypeBool,
@@ -24,6 +24,11 @@ func resourceUser() *schema.Resource {
 			"admin": {
 				Type:     schema.TypeBool,
 				Required: true,
+			},
+			"login": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 			"machine": {
 				Type:     schema.TypeBool,
@@ -40,103 +45,102 @@ func resourceUser() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 
-		Create: resourceUserCreate,
-		Read:   resourceUserRead,
-		Update: resourceUserUpdate,
-		Delete: resourceUserDelete,
-		Exists: resourceUserExists,
+		CreateContext: resourceUserCreate,
+		ReadContext:   resourceUserRead,
+		UpdateContext: resourceUserUpdate,
+		DeleteContext: resourceUserDelete,
 	}
 }
 
-func resourceUserCreate(data *schema.ResourceData, meta interface{}) error {
-	client := meta.(drone.Client)
+func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(drone.Client)
 
-	user, err := client.UserCreate(createUser(data))
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
+	login := d.Get("login").(string)
+	user := &drone.User{
+		Active:  d.Get("active").(bool),
+		Admin:   d.Get("admin").(bool),
+		Login:   login,
+		Machine: d.Get("machine").(bool),
+	}
+
+	user, err := client.UserCreate(user)
 	if err != nil {
-		return fmt.Errorf("Unable to create user %s", user.Login)
+		return diag.FromErr(err)
 	}
 
-	return readUser(data, user, err)
+	d.SetId(login)
+
+	resourceUserRead(ctx, d, m)
+
+	return diags
 }
 
-func resourceUserUpdate(data *schema.ResourceData, meta interface{}) error {
-	client := meta.(drone.Client)
+func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(drone.Client)
 
-	user, err := client.User(data.Id())
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
+	//	user, err := client.User(d.Get("login").(string))
+	user, err := client.User(d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	user, err = client.UserUpdate(user.Login, updateUser(data))
+	if err := d.Set("login", user.Login); err != nil {
+		return diag.FromErr(err)
+	}
 
-	return readUser(data, user, err)
+	return diags
 }
 
-func resourceUserRead(data *schema.ResourceData, meta interface{}) error {
-	client := meta.(drone.Client)
+func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(drone.Client)
 
-	user, err := client.User(data.Id())
+	login := d.Get("login").(string)
+
+	_, err := client.UserUpdate(login, updateUser(d))
 	if err != nil {
-		return fmt.Errorf("failed to read Drone user with id: %s", data.Id())
+		return diag.FromErr(err)
 	}
 
-	return readUser(data, user, err)
+	d.Set("last_updated", time.Now().Format(time.RFC850))
+
+	return resourceUserRead(ctx, d, m)
 }
 
-func resourceUserDelete(data *schema.ResourceData, meta interface{}) error {
-	client := meta.(drone.Client)
+func resourceUserDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	client := m.(drone.Client)
 
-	return client.UserDelete(data.Id())
-}
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
-func resourceUserExists(data *schema.ResourceData, meta interface{}) (bool, error) {
-	client := meta.(drone.Client)
+	login := d.Get("login").(string)
 
-	login := data.Id()
-
-	user, err := client.User(login)
+	err := client.UserDelete(login)
 	if err != nil {
-		return false, fmt.Errorf("failed to read Drone user with id: %s", data.Id())
+		return diag.FromErr(err)
 	}
 
-	exists := user.Login == login
+	// d.SetId("") is automatically called assuming delete returns no errors, but
+	// it is added here for explicitness.
+	d.SetId("")
 
-	return exists, err
-}
-
-func createUser(data *schema.ResourceData) (user *drone.User) {
-	user = &drone.User{
-		Login:   data.Get("login").(string),
-		Active:  data.Get("active").(bool),
-		Admin:   data.Get("admin").(bool),
-		Machine: data.Get("machine").(bool),
-	}
-
-	return user
+	return diags
 }
 
 func updateUser(data *schema.ResourceData) (user *drone.UserPatch) {
 	userPatch := &drone.UserPatch{
-		Active:  utils.Bool(data.Get("active").(bool)),
-		Admin:   utils.Bool(data.Get("admin").(bool)),
-		Machine: utils.Bool(data.Get("machine").(bool)),
+		Active:  Bool(data.Get("active").(bool)),
+		Admin:   Bool(data.Get("admin").(bool)),
+		Machine: Bool(data.Get("machine").(bool)),
 	}
 	return userPatch
 }
 
-func readUser(data *schema.ResourceData, user *drone.User, err error) error {
-	if err != nil {
-		return err
-	}
-
-	data.SetId(user.Login)
-
-	data.Set("login", user.Login)
-	data.Set("active", user.Active)
-	data.Set("machine", user.Machine)
-	data.Set("admin", user.Admin)
-	data.Set("token", user.Token)
-	return nil
+func Bool(val bool) *bool {
+	return &val
 }

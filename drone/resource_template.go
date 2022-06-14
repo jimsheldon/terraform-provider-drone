@@ -12,7 +12,7 @@ import (
 func resourceTemplate() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"last_updated": &schema.Schema{
+			"last_updated": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -82,7 +82,7 @@ func resourceTemplateRead(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("data", template.Data); err != nil {
+	if err := d.Set("template", template); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -99,7 +99,7 @@ func resourceTemplateUpdate(ctx context.Context, d *schema.ResourceData, m inter
 		Data: d.Get("data").(string),
 	}
 
-	template, err := client.TemplateUpdate(namespace, name, template)
+	_, err := client.TemplateUpdate(namespace, name, template)
 	if err != nil {
 		return diag.FromErr(err)
 	}
