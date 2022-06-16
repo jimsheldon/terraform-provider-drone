@@ -1,0 +1,32 @@
+kind: pipeline
+type: docker
+name: default
+
+trigger:
+  branch:
+  - main
+
+services:
+- name: drone
+  image: drone/drone:2.12.1
+  environment:
+    DRONE_GITEA_SERVER: "http://invalid"
+    DRONE_GITEA_CLIENT_ID: abcdefg
+    DRONE_GITEA_CLIENT_SECRET: hijklmnop
+    DRONE_RPC_SECRET: qrstuvwxyz
+    DRONE_USER_CREATE: "username:drone,machine:false,admin:true,token:55241de264decc58e8a2b2d90728702c"
+
+steps:
+- name: drone wait
+  image: curlimages/curl:7.83.1
+  commands:
+  # Checks to see that localstack service is up and running
+  - until curl --silent --max-time 1 http://drone/healthz; do echo -n . && sleep 1; done
+
+- name: run tests
+  image: golang:1.16
+  environment:
+    DRONE_SERVER: http://drone
+    DRONE_TOKEN: 55241de264decc58e8a2b2d90728702c
+  commands:
+  - go test -v ./...
