@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"terraform-provider-drone/drone/utils"
+
 	"github.com/drone/drone-go/drone"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -58,20 +60,12 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	login := d.Get("login").(string)
-	user := &drone.User{
-		Active:  d.Get("active").(bool),
-		Admin:   d.Get("admin").(bool),
-		Login:   login,
-		Machine: d.Get("machine").(bool),
-	}
-
-	user, err := client.UserCreate(user)
+	user, err := client.UserCreate(createUser(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(login)
+	d.SetId(user.Login)
 
 	resourceUserRead(ctx, d, m)
 
@@ -99,9 +93,9 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(drone.Client)
 
-	login := d.Get("login").(string)
+	user, err := client.User(d.Id())
 
-	_, err := client.UserUpdate(login, updateUser(d))
+	_, err = client.UserUpdate(user.Login, updateUser(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -131,15 +125,23 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, m interface
 	return diags
 }
 
-func updateUser(data *schema.ResourceData) (user *drone.UserPatch) {
-	userPatch := &drone.UserPatch{
-		Active:  Bool(data.Get("active").(bool)),
-		Admin:   Bool(data.Get("admin").(bool)),
-		Machine: Bool(data.Get("machine").(bool)),
+func createUser(data *schema.ResourceData) (user *drone.User) {
+	user = &drone.User{
+		Login:   data.Get("login").(string),
+		Active:  data.Get("active").(bool),
+		Admin:   data.Get("admin").(bool),
+		Machine: data.Get("machine").(bool),
 	}
-	return userPatch
+
+	return user
 }
 
-func Bool(val bool) *bool {
-	return &val
+func updateUser(data *schema.ResourceData) (user *drone.UserPatch) {
+	userPatch := &drone.UserPatch{
+		Active:  utils.Bool(data.Get("active").(bool)),
+		Admin:   utils.Bool(data.Get("admin").(bool)),
+		Machine: utils.Bool(data.Get("machine").(bool)),
+	}
+
+	return userPatch
 }
