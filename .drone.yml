@@ -13,6 +13,9 @@ services:
     DRONE_GITEA_SERVER: "http://invalid"
     DRONE_GITEA_CLIENT_ID: abcdefg
     DRONE_GITEA_CLIENT_SECRET: hijklmnop
+    DRONE_LOGS_DEBUG: true
+    DRONE_LOGS_TEXT: true
+    DRONE_LOGS_COLOR: true
     DRONE_RPC_SECRET: qrstuvwxyz
     DRONE_USER_CREATE: "username:drone,machine:false,admin:true,token:55241de264decc58e8a2b2d90728702c"
 
