@@ -21,7 +21,7 @@ steps:
   image: curlimages/curl:7.83.1
   commands:
   # Checks to see that localstack service is up and running
-  - until curl --silent --max-time 1 http://drone:8080/healthz; do echo -n . && sleep 1; done
+  - until curl --silent --max-time 1 http://drone/healthz; do echo -n . && sleep 1; done
 
 - name: run tests
   image: golang:1.16
