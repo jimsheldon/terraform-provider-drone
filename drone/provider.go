@@ -31,6 +31,7 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"drone_repo":     resourceRepo(),
 			"drone_template": resourceTemplate(),
 			"drone_user":     resourceUser(),
 		},

@@ -17,6 +17,40 @@ import (
 func resourceRepo() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"cancel_pulls": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"cancel_push": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"cancel_running": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"configuration": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  ".drone.yml",
+			},
+			"last_updated": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"ignore_forks": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"ignore_pulls": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"protected": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 			"repository": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -26,21 +60,12 @@ func resourceRepo() *schema.Resource {
 					"Invalid repository (e.g. octocat/hello-world)",
 				),
 			},
-			"configuration": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  ".drone.yml",
-			},
 			"timeout": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  60,
 			},
 			"trusted": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-			"protected": {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
@@ -119,7 +144,22 @@ func resourceRepoRead(ctx context.Context, d *schema.ResourceData, m interface{}
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("cancel_pulls", repository.CancelPulls); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("cancel_push", repository.CancelPush); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("cancel_running", repository.CancelPush); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("configuration", repository.Config); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("ignore_forks", repository.IgnoreForks); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("ignore_pulls", repository.IgnorePulls); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("protected", repository.Protected); err != nil {
@@ -144,16 +184,43 @@ func resourceRepoRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceRepoUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(drone.Client)
 
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
 	owner, repo, err := utils.ParseRepo(d.Id())
 
-	_, err = client.RepoUpdate(owner, repo, createRepo(d))
+	cancel_pulls := d.Get("cancel_pulls").(bool)
+	cancel_push := d.Get("cancel_push").(bool)
+	cancel_running := d.Get("cancel_running").(bool)
+	config := d.Get("configuration").(string)
+	ignore_forks := d.Get("ignore_forks").(bool)
+	ignore_pulls := d.Get("ignore_pulls").(bool)
+	protected := d.Get("protected").(bool)
+	timeout := int64(d.Get("timeout").(int))
+	trusted := d.Get("trusted").(bool)
+	visibility := d.Get("visibility").(string)
+
+	repository := &drone.RepoPatch{
+		CancelPulls:   &cancel_pulls,
+		CancelPush:    &cancel_push,
+		CancelRunning: &cancel_running,
+		Config:        &config,
+		IgnoreForks:   &ignore_forks,
+		IgnorePulls:   &ignore_pulls,
+		Protected:     &protected,
+		Trusted:       &trusted,
+		Timeout:       &timeout,
+		Visibility:    &visibility,
+	}
+
+	_, err = client.RepoUpdate(owner, repo, repository)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.Set("last_updated", time.Now().Format(time.RFC850))
 
-	return resourceRepoRead(ctx, d, m)
+	return diags
 }
 
 func resourceRepoDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -177,18 +244,28 @@ func resourceRepoDelete(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func createRepo(data *schema.ResourceData) (repository *drone.RepoPatch) {
+	cancel_pulls := data.Get("cancel_pulls").(bool)
+	cancel_push := data.Get("cancel_push").(bool)
+	cancel_running := data.Get("cancel_running").(bool)
 	config := data.Get("configuration").(string)
+	ignore_forks := data.Get("ignore_forks").(bool)
+	ignore_pulls := data.Get("ignore_pulls").(bool)
 	protected := data.Get("protected").(bool)
 	timeout := int64(data.Get("timeout").(int))
 	trusted := data.Get("trusted").(bool)
 	visibility := data.Get("visibility").(string)
 
 	repository = &drone.RepoPatch{
-		Config:     &config,
-		Protected:  &protected,
-		Trusted:    &trusted,
-		Timeout:    &timeout,
-		Visibility: &visibility,
+		CancelPulls:   &cancel_pulls,
+		CancelPush:    &cancel_push,
+		CancelRunning: &cancel_running,
+		Config:        &config,
+		IgnoreForks:   &ignore_forks,
+		IgnorePulls:   &ignore_pulls,
+		Protected:     &protected,
+		Trusted:       &trusted,
+		Timeout:       &timeout,
+		Visibility:    &visibility,
 	}
 
 	return nil
