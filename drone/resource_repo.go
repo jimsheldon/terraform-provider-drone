@@ -144,39 +144,17 @@ func resourceRepoRead(ctx context.Context, d *schema.ResourceData, m interface{}
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("cancel_pulls", repository.CancelPulls); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("cancel_push", repository.CancelPush); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("cancel_running", repository.CancelPush); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("configuration", repository.Config); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("ignore_forks", repository.IgnoreForks); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("ignore_pulls", repository.IgnorePulls); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("protected", repository.Protected); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("repository", fmt.Sprintf("%s/%s", repository.Namespace, repository.Name)); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("timeout", repository.Timeout); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("trusted", repository.Trusted); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("visibility", repository.Visibility); err != nil {
-		return diag.FromErr(err)
-	}
+	d.Set("cancel_pulls", repository.CancelPulls)
+	d.Set("cancel_push", repository.CancelPush)
+	d.Set("cancel_running", repository.CancelPush)
+	d.Set("configuration", repository.Config)
+	d.Set("ignore_forks", repository.IgnoreForks)
+	d.Set("ignore_pulls", repository.IgnorePulls)
+	d.Set("protected", repository.Protected)
+	d.Set("repository", fmt.Sprintf("%s/%s", repository.Namespace, repository.Name))
+	d.Set("timeout", repository.Timeout)
+	d.Set("trusted", repository.Trusted)
+	d.Set("visibility", repository.Visibility)
 
 	return diags
 }
