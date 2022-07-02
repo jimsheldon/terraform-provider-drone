@@ -12,7 +12,7 @@ services:
   environment:
     DRONE_GITEA_SERVER: "http://invalid"
     DRONE_GITEA_CLIENT_ID: abcdefg
-    DRONE_GITEA_CLIENT_SECRET: hijklmnop
+    DRONE_GITEA_CLIENT_SECRET: hijklmnopq
     DRONE_LOGS_DEBUG: true
     DRONE_LOGS_TEXT: true
     DRONE_RPC_SECRET: qrstuvwxyz
