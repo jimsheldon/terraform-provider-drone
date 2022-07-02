@@ -144,17 +144,9 @@ func resourceRepoRead(ctx context.Context, d *schema.ResourceData, m interface{}
 		return diag.FromErr(err)
 	}
 
-	d.Set("cancel_pulls", repository.CancelPulls)
-	d.Set("cancel_push", repository.CancelPush)
-	d.Set("cancel_running", repository.CancelPush)
-	d.Set("configuration", repository.Config)
-	d.Set("ignore_forks", repository.IgnoreForks)
-	d.Set("ignore_pulls", repository.IgnorePulls)
-	d.Set("protected", repository.Protected)
-	d.Set("repository", fmt.Sprintf("%s/%s", repository.Namespace, repository.Name))
-	d.Set("timeout", repository.Timeout)
-	d.Set("trusted", repository.Trusted)
-	d.Set("visibility", repository.Visibility)
+	d.SetId(fmt.Sprintf("%s/%s", repository.Namespace, repository.Name))
+
+	readRepo(d, repository, err)
 
 	return diags
 }
@@ -162,43 +154,16 @@ func resourceRepoRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceRepoUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(drone.Client)
 
-	// Warning or errors can be collected in a slice type
-	var diags diag.Diagnostics
+	owner, repo, err := utils.ParseRepo(d.Get("repository").(string))
 
-	owner, repo, err := utils.ParseRepo(d.Id())
-
-	cancel_pulls := d.Get("cancel_pulls").(bool)
-	cancel_push := d.Get("cancel_push").(bool)
-	cancel_running := d.Get("cancel_running").(bool)
-	config := d.Get("configuration").(string)
-	ignore_forks := d.Get("ignore_forks").(bool)
-	ignore_pulls := d.Get("ignore_pulls").(bool)
-	protected := d.Get("protected").(bool)
-	timeout := int64(d.Get("timeout").(int))
-	trusted := d.Get("trusted").(bool)
-	visibility := d.Get("visibility").(string)
-
-	repository := &drone.RepoPatch{
-		CancelPulls:   &cancel_pulls,
-		CancelPush:    &cancel_push,
-		CancelRunning: &cancel_running,
-		Config:        &config,
-		IgnoreForks:   &ignore_forks,
-		IgnorePulls:   &ignore_pulls,
-		Protected:     &protected,
-		Trusted:       &trusted,
-		Timeout:       &timeout,
-		Visibility:    &visibility,
-	}
-
-	_, err = client.RepoUpdate(owner, repo, repository)
+	_, err = client.RepoUpdate(owner, repo, createRepo(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.Set("last_updated", time.Now().Format(time.RFC850))
 
-	return diags
+	return resourceRepoRead(ctx, d, m)
 }
 
 func resourceRepoDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -246,5 +211,19 @@ func createRepo(data *schema.ResourceData) (repository *drone.RepoPatch) {
 		Visibility:    &visibility,
 	}
 
-	return nil
+	return
+}
+
+func readRepo(d *schema.ResourceData, repository *drone.Repo, err error) {
+	d.Set("cancel_pulls", repository.CancelPulls)
+	d.Set("cancel_push", repository.CancelPush)
+	d.Set("cancel_running", repository.CancelRunning)
+	d.Set("configuration", repository.Config)
+	d.Set("ignore_forks", repository.IgnoreForks)
+	d.Set("ignore_pulls", repository.IgnorePulls)
+	d.Set("protected", repository.Protected)
+	d.Set("repository", fmt.Sprintf("%s/%s", repository.Namespace, repository.Name))
+	d.Set("timeout", repository.Timeout)
+	d.Set("trusted", repository.Trusted)
+	d.Set("visibility", repository.Visibility)
 }
