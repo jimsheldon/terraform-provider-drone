@@ -103,7 +103,7 @@ func resourceRepoCreate(ctx context.Context, d *schema.ResourceData, m interface
 		return diag.FromErr(err)
 	}
 
-	repository, err := client.Repo(owner, repo)
+	_, err = client.Repo(owner, repo)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -120,8 +120,6 @@ func resourceRepoCreate(ctx context.Context, d *schema.ResourceData, m interface
 			return diag.FromErr(err)
 		}
 	}
-
-	d.SetId(fmt.Sprintf("%s/%s", repository.Namespace, repository.Name))
 
 	resourceRepoRead(ctx, d, m)
 
@@ -146,7 +144,7 @@ func resourceRepoRead(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	d.SetId(fmt.Sprintf("%s/%s", repository.Namespace, repository.Name))
 
-	readRepo(d, repository, err)
+	readRepo(d, repository)
 
 	return diags
 }
@@ -214,7 +212,7 @@ func createRepo(data *schema.ResourceData) (repository *drone.RepoPatch) {
 	return
 }
 
-func readRepo(d *schema.ResourceData, repository *drone.Repo, err error) {
+func readRepo(d *schema.ResourceData, repository *drone.Repo) {
 	d.Set("cancel_pulls", repository.CancelPulls)
 	d.Set("cancel_push", repository.CancelPush)
 	d.Set("cancel_running", repository.CancelRunning)

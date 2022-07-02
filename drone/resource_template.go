@@ -2,7 +2,8 @@ package drone
 
 import (
 	"context"
-	"strings"
+	"fmt"
+	"terraform-provider-drone/drone/utils"
 	"time"
 
 	"github.com/drone/drone-go/drone"
@@ -50,21 +51,14 @@ func resourceTemplateCreate(ctx context.Context, d *schema.ResourceData, m inter
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	name := d.Get("name").(string)
 	namespace := d.Get("namespace").(string)
-	template := &drone.Template{
-		Name: d.Get("name").(string),
-		Data: d.Get("data").(string),
-	}
 
-	template, err := client.TemplateCreate(namespace, template)
+	template, err := client.TemplateCreate(namespace, createTemplate(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(namespace + "/" + name)
-
-	resourceTemplateRead(ctx, d, m)
+	d.SetId(fmt.Sprintf("%s/%s", namespace, template.Name))
 
 	return diags
 }
@@ -75,25 +69,17 @@ func resourceTemplateRead(ctx context.Context, d *schema.ResourceData, m interfa
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	templateId := d.Id()
-	parts := strings.SplitN(templateId, "/", 2)
-	namespace := parts[0]
-	name := parts[1]
+	namespace, name, err := utils.ParseRepo(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	template, err := client.Template(namespace, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("name", name); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("namespace", namespace); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("data", template.Data); err != nil {
-		return diag.FromErr(err)
-	}
+	readTemplate(d, template)
 
 	return diags
 }
@@ -101,14 +87,12 @@ func resourceTemplateRead(ctx context.Context, d *schema.ResourceData, m interfa
 func resourceTemplateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(drone.Client)
 
-	name := d.Get("name").(string)
-	namespace := d.Get("namespace").(string)
-	template := &drone.Template{
-		Name: name,
-		Data: d.Get("data").(string),
+	namespace, name, err := utils.ParseOrgId(d.Id(), "template_name")
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	_, err := client.TemplateUpdate(namespace, name, template)
+	_, err = client.TemplateUpdate(namespace, name, createTemplate(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -124,10 +108,12 @@ func resourceTemplateDelete(ctx context.Context, d *schema.ResourceData, m inter
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	name := d.Get("name").(string)
-	namespace := d.Get("namespace").(string)
+	namespace, name, err := utils.ParseOrgId(d.Id(), "template_name")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	err := client.TemplateDelete(namespace, name)
+	err = client.TemplateDelete(namespace, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -137,4 +123,18 @@ func resourceTemplateDelete(ctx context.Context, d *schema.ResourceData, m inter
 	d.SetId("")
 
 	return diags
+}
+
+func createTemplate(d *schema.ResourceData) (template *drone.Template) {
+	template = &drone.Template{
+		Name: d.Get("name").(string),
+		Data: d.Get("data").(string),
+	}
+
+	return
+}
+
+func readTemplate(d *schema.ResourceData, template *drone.Template) {
+	d.Set("name", template.Name)
+	d.Set("data", template.Data)
 }

@@ -67,7 +67,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 
 	d.SetId(user.Login)
 
-	resourceUserRead(ctx, d, m)
+	readUser(d, user)
 
 	return diags
 }
@@ -83,9 +83,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("login", user.Login); err != nil {
-		return diag.FromErr(err)
-	}
+	readUser(d, user)
 
 	return diags
 }
@@ -94,11 +92,11 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, m interface
 	client := m.(drone.Client)
 
 	user, err := client.User(d.Id())
-
-	_, err = client.UserUpdate(user.Login, updateUser(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	client.UserUpdate(user.Login, updateUser(d))
 
 	d.Set("last_updated", time.Now().Format(time.RFC850))
 
@@ -125,23 +123,31 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, m interface
 	return diags
 }
 
-func createUser(data *schema.ResourceData) (user *drone.User) {
+func createUser(d *schema.ResourceData) (user *drone.User) {
 	user = &drone.User{
-		Login:   data.Get("login").(string),
-		Active:  data.Get("active").(bool),
-		Admin:   data.Get("admin").(bool),
-		Machine: data.Get("machine").(bool),
+		Login:   d.Get("login").(string),
+		Active:  d.Get("active").(bool),
+		Admin:   d.Get("admin").(bool),
+		Machine: d.Get("machine").(bool),
 	}
 
-	return user
+	return
 }
 
-func updateUser(data *schema.ResourceData) (user *drone.UserPatch) {
-	userPatch := &drone.UserPatch{
+func updateUser(data *schema.ResourceData) (userPatch *drone.UserPatch) {
+	userPatch = &drone.UserPatch{
 		Active:  utils.Bool(data.Get("active").(bool)),
 		Admin:   utils.Bool(data.Get("admin").(bool)),
 		Machine: utils.Bool(data.Get("machine").(bool)),
 	}
 
-	return userPatch
+	return
+}
+
+func readUser(d *schema.ResourceData, user *drone.User) {
+	d.Set("login", user.Login)
+	d.Set("active", user.Active)
+	d.Set("machine", user.Machine)
+	d.Set("admin", user.Admin)
+	d.Set("token", user.Token)
 }
