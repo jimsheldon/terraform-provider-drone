@@ -80,9 +80,7 @@ func resourceSecretCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	d.Set("value", d.Get("value").(string))
-
-	readSecret(d, owner, repo, secret)
+	d.SetId(fmt.Sprintf("%s/%s/%s", owner, repo, secret.Name))
 
 	return diags
 }
@@ -93,7 +91,7 @@ func resourceSecretRead(ctx context.Context, d *schema.ResourceData, m interface
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	owner, repo, name, err := utils.ParseId(d.Id(), "secret_password")
+	owner, repo, name, err := utils.ParseId(d.Id(), "secret_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -116,11 +114,10 @@ func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	secret, err := client.SecretUpdate(owner, repo, createSecret(d))
-
-	d.Set("value", d.Get("value").(string))
-
-	readSecret(d, owner, repo, secret)
+	_, err = client.SecretUpdate(owner, repo, createSecret(d))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	d.Set("last_updated", time.Now().Format(time.RFC850))
 
@@ -133,7 +130,7 @@ func resourceSecretDelete(ctx context.Context, d *schema.ResourceData, m interfa
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	owner, repo, name, err := utils.ParseId(d.Id(), "secret_password")
+	owner, repo, name, err := utils.ParseId(d.Id(), "secret_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -151,16 +148,17 @@ func resourceSecretDelete(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func createSecret(d *schema.ResourceData) (secret *drone.Secret) {
-	return &drone.Secret{
+	secret = &drone.Secret{
 		Name:            d.Get("name").(string),
 		Data:            d.Get("value").(string),
 		PullRequest:     d.Get("allow_on_pull_request").(bool),
 		PullRequestPush: d.Get("allow_push_on_pull_request").(bool),
 	}
+
+	return
 }
 
 func readSecret(d *schema.ResourceData, owner, repo string, secret *drone.Secret) {
-	d.SetId(fmt.Sprintf("%s/%s/%s", owner, repo, secret.Name))
 	d.Set("repository", fmt.Sprintf("%s/%s", owner, repo))
 	d.Set("name", secret.Name)
 	d.Set("allow_on_pull_request", secret.PullRequest)

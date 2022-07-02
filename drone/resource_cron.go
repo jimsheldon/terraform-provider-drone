@@ -98,7 +98,7 @@ func resourceCronCreate(ctx context.Context, d *schema.ResourceData, m interface
 		return diag.FromErr(err)
 	}
 
-	readCron(d, cron, owner, repo)
+	d.SetId(fmt.Sprintf("%s/%s/%s", owner, repo, cron.Name))
 
 	return diags
 }
@@ -109,18 +109,17 @@ func resourceCronRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	owner, repo, err := utils.ParseRepo(d.Get("repository").(string))
+	owner, repo, name, err := utils.ParseId(d.Get("repository").(string), "cron_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	cronName := d.Get("name").(string)
-	cron, err := client.Cron(owner, repo, cronName)
+	cron, err := client.Cron(owner, repo, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	readCron(d, cron, owner, repo)
+	readCron(d, owner, repo, cron)
 
 	return diags
 }
@@ -128,13 +127,15 @@ func resourceCronRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceCronUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(drone.Client)
 
-	owner, repo, err := utils.ParseRepo(d.Get("repository").(string))
+	owner, repo, name, err := utils.ParseId(d.Get("repository").(string), "cron_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	cronName := d.Get("name").(string)
-	_, err = client.CronUpdate(owner, repo, cronName, updateCron(d))
+	_, err = client.CronUpdate(owner, repo, name, updateCron(d))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	d.Set("last_updated", time.Now().Format(time.RFC850))
 
@@ -147,14 +148,12 @@ func resourceCronDelete(ctx context.Context, d *schema.ResourceData, m interface
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	owner, repo, err := utils.ParseRepo(d.Get("repository").(string))
+	owner, repo, name, err := utils.ParseId(d.Get("repository").(string), "cron_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	cronName := d.Get("name").(string)
-
-	err = client.CronDelete(owner, repo, cronName)
+	err = client.CronDelete(owner, repo, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -192,9 +191,7 @@ func updateCron(d *schema.ResourceData) (repository *drone.CronPatch) {
 	return cron
 }
 
-func readCron(d *schema.ResourceData, cron *drone.Cron, namespace string, repo string) {
-	d.SetId(fmt.Sprintf("%d", cron.ID))
-
+func readCron(d *schema.ResourceData, namespace string, repo string, cron *drone.Cron) {
 	d.Set("repository", fmt.Sprintf("%s/%s", namespace, repo))
 	d.Set("branch", cron.Branch)
 	d.Set("disabled", cron.Disabled)

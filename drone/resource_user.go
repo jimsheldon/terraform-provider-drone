@@ -67,8 +67,6 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, m interface
 
 	d.SetId(user.Login)
 
-	readUser(d, user)
-
 	return diags
 }
 
@@ -96,7 +94,10 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, m interface
 		return diag.FromErr(err)
 	}
 
-	client.UserUpdate(user.Login, updateUser(d))
+	_, err = client.UserUpdate(user.Login, updateUser(d))
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	d.Set("last_updated", time.Now().Format(time.RFC850))
 

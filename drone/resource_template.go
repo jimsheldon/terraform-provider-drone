@@ -69,7 +69,7 @@ func resourceTemplateRead(ctx context.Context, d *schema.ResourceData, m interfa
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	namespace, name, err := utils.ParseRepo(d.Id())
+	namespace, name, err := utils.ParseOrgId(d.Id(), "template_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}

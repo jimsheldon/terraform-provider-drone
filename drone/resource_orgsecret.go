@@ -3,6 +3,7 @@ package drone
 import (
 	"context"
 	"fmt"
+	"terraform-provider-drone/drone/utils"
 	"time"
 
 	"github.com/drone/drone-go/drone"
@@ -70,7 +71,7 @@ func resourceOrgSecretCreate(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	readOrgSecret(d, namespace, secret)
+	d.SetId(fmt.Sprintf("%s/%s", namespace, secret.Name))
 
 	return diags
 }
@@ -81,15 +82,17 @@ func resourceOrgSecretRead(ctx context.Context, d *schema.ResourceData, m interf
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	namespace := d.Get("namespace").(string)
-	name := d.Get("name").(string)
+	namespace, name, err := utils.ParseOrgId(d.Id(), "secret_name")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	secret, err := client.OrgSecret(namespace, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	readOrgSecret(d, namespace, secret)
+	readOrgSecret(d, secret)
 
 	return diags
 }
@@ -97,9 +100,12 @@ func resourceOrgSecretRead(ctx context.Context, d *schema.ResourceData, m interf
 func resourceOrgSecretUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(drone.Client)
 
-	namespace := d.Get("namespace").(string)
+	namespace, _, err := utils.ParseOrgId(d.Id(), "secret_name")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	_, err := client.OrgSecretUpdate(namespace, createOrgSecret(d))
+	client.OrgSecretUpdate(namespace, createOrgSecret(d))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -115,10 +121,9 @@ func resourceOrgSecretDelete(ctx context.Context, d *schema.ResourceData, m inte
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	namespace := d.Get("namespace").(string)
-	name := d.Get("name").(string)
+	namespace, name, err := utils.ParseOrgId(d.Id(), "secret_name")
 
-	err := client.OrgSecretDelete(namespace, name)
+	err = client.OrgSecretDelete(namespace, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -139,8 +144,7 @@ func createOrgSecret(data *schema.ResourceData) (secret *drone.Secret) {
 	}
 }
 
-func readOrgSecret(data *schema.ResourceData, namespace string, secret *drone.Secret) {
-	data.SetId(fmt.Sprintf("%s/%s", namespace, secret.Name))
+func readOrgSecret(data *schema.ResourceData, secret *drone.Secret) {
 	data.Set("name", secret.Name)
 	data.Set("allow_on_pull_request", secret.PullRequest)
 	data.Set("allow_push_on_pull_request", secret.PullRequestPush)
