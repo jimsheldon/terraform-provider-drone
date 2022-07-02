@@ -34,6 +34,7 @@ func Provider() *schema.Provider {
 			"drone_cron":      resourceCron(),
 			"drone_orgsecret": resourceOrgSecret(),
 			"drone_repo":      resourceRepo(),
+			"drone_secret":    resourceSecret(),
 			"drone_template":  resourceTemplate(),
 			"drone_user":      resourceUser(),
 		},
