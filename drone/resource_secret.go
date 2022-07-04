@@ -97,9 +97,11 @@ func resourceSecretRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	secret, err := client.Secret(owner, repo, name)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  fmt.Sprintf("Failed to read Drone Secret: %s/%s/%s", owner, repo, name),
+		Detail:   err.Error(),
+	})
 
 	readSecret(d, owner, repo, secret)
 

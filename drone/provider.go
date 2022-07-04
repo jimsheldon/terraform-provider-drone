@@ -75,7 +75,7 @@ func providerConfigure(ctx context.Context, data *schema.ResourceData) (interfac
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Unable to create Drone client",
-			Detail:   "Unable to authenticate with Drone server at " + server,
+			Detail:   err.Error(),
 		})
 	}
 

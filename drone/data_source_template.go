@@ -2,6 +2,7 @@ package drone
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -38,15 +39,15 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, m inter
 	namespace := d.Get("namespace").(string)
 
 	template, err := client.Template(namespace, name)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  fmt.Sprintf("Template %s/%s not found", namespace, name),
+		Detail:   err.Error(),
+	})
 
-	if err := d.Set("data", template.Data); err != nil {
-		return diag.FromErr(err)
-	}
+	readTemplate(d, template)
 
-	d.SetId(namespace + "/" + name)
+	d.SetId(fmt.Sprintf("%s/%s", namespace, name))
 
 	return diags
 }

@@ -121,7 +121,7 @@ func resourceRepoCreate(ctx context.Context, d *schema.ResourceData, m interface
 		}
 	}
 
-	resourceRepoRead(ctx, d, m)
+	d.SetId(fmt.Sprintf("%s/%s", owner, repo))
 
 	return diags
 }
@@ -138,11 +138,11 @@ func resourceRepoRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	}
 
 	repository, err := client.Repo(owner, repo)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(fmt.Sprintf("%s/%s", repository.Namespace, repository.Name))
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  fmt.Sprintf("Failed to read Drone Repo: %s/%s", owner, repo),
+		Detail:   err.Error(),
+	})
 
 	readRepo(d, repository)
 

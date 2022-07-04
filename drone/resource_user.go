@@ -2,6 +2,7 @@ package drone
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"terraform-provider-drone/drone/utils"
@@ -77,9 +78,11 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	var diags diag.Diagnostics
 
 	user, err := client.User(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  fmt.Sprintf("Failed to read Drone user with id: %s", d.Id()),
+		Detail:   err.Error(),
+	})
 
 	readUser(d, user)
 

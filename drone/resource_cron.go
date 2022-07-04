@@ -109,15 +109,17 @@ func resourceCronRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	owner, repo, name, err := utils.ParseId(d.Get("repository").(string), "cron_name")
+	owner, repo, name, err := utils.ParseId(d.Id(), "cron_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	cron, err := client.Cron(owner, repo, name)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  fmt.Sprintf("Failed to read Drone Cron: %s/%s/%s not found", owner, repo, name),
+		Detail:   err.Error(),
+	})
 
 	readCron(d, owner, repo, cron)
 
@@ -127,7 +129,7 @@ func resourceCronRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceCronUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(drone.Client)
 
-	owner, repo, name, err := utils.ParseId(d.Get("repository").(string), "cron_name")
+	owner, repo, name, err := utils.ParseId(d.Id(), "cron_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -148,7 +150,7 @@ func resourceCronDelete(ctx context.Context, d *schema.ResourceData, m interface
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	owner, repo, name, err := utils.ParseId(d.Get("repository").(string), "cron_name")
+	owner, repo, name, err := utils.ParseId(d.Id(), "cron_name")
 	if err != nil {
 		return diag.FromErr(err)
 	}
