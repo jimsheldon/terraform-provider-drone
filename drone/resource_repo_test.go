@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccDroneCronBasic(t *testing.T) {
-	// testing cronjobs requires a valid repository, currently I only have this working
+func TestAccDroneRepoBasic(t *testing.T) {
+	// testing requires a valid repository, currently I only have this working
 	// in my own local environment
 	scmAvail := os.Getenv("SCM_AVAIL")
 	if scmAvail == "" {
@@ -27,51 +27,55 @@ func TestAccDroneCronBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDroneCronDestroy,
+		CheckDestroy: testAccCheckDroneRepoDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckDroneCronConfigBasic(rName),
+				Config: testAccCheckDroneRepoConfigBasic(rName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDroneCronExists("drone_cron.new"),
-					resource.TestCheckResourceAttr("drone_cron.new", "name", rName),
+					testAccCheckDroneRepoExists("drone_repo.new"),
+					resource.TestCheckResourceAttr("drone_repo.new", "configuration", rName+".yaml"),
 				),
 			},
 		},
 	})
 }
 
-func testAccCheckDroneCronDestroy(s *terraform.State) error {
+func testAccCheckDroneRepoDestroy(s *terraform.State) error {
 	c := testAccProvider.Meta().(drone.Client)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "drone_cron" {
+		if rs.Type != "drone_repo" {
 			continue
 		}
 
-		name := rs.Primary.Attributes["name"]
 		repository := rs.Primary.Attributes["repository"]
 		owner, repo, err := utils.ParseRepo(repository)
 
-		err = c.CronDelete(owner, repo, name)
-		if err == nil {
-			return fmt.Errorf("Cron (%s/%s/%s) still exists.", owner, repo, name)
+		repositories, err := c.RepoList()
+
+		for _, repository := range repositories {
+			if (repository.Namespace == owner) && (repository.Name == repo) {
+				err = c.RepoDisable(owner, repo)
+				if err != nil {
+					return fmt.Errorf("Repo still exists: %s/%s", owner, repo)
+				}
+			}
 		}
 	}
 
 	return nil
 }
 
-func testAccCheckDroneCronConfigBasic(n string) string {
+func testAccCheckDroneRepoConfigBasic(n string) string {
 	return fmt.Sprintf(`
-	resource "drone_cron" "new" {
+	resource "drone_repo" "new" {
 		repository = "jimsheldon/drone-quickstart"
-		name = "%s"
-		event = "push"
+		configuration = "%s.yaml"
 	}
 	`, n)
 }
 
-func testAccCheckDroneCronExists(n string) resource.TestCheckFunc {
+func testAccCheckDroneRepoExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 

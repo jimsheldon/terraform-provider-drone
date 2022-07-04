@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccDroneCronBasic(t *testing.T) {
-	// testing cronjobs requires a valid repository, currently I only have this working
+func TestAccDroneSecretBasic(t *testing.T) {
+	// testing secrets requires a valid repository, currently I only have this working
 	// in my own local environment
 	scmAvail := os.Getenv("SCM_AVAIL")
 	if scmAvail == "" {
@@ -27,24 +27,24 @@ func TestAccDroneCronBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDroneCronDestroy,
+		CheckDestroy: testAccCheckDroneSecretDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckDroneCronConfigBasic(rName),
+				Config: testAccCheckDroneSecretConfigBasic(rName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDroneCronExists("drone_cron.new"),
-					resource.TestCheckResourceAttr("drone_cron.new", "name", rName),
+					testAccCheckDroneSecretExists("drone_secret.new"),
+					resource.TestCheckResourceAttr("drone_secret.new", "name", rName),
 				),
 			},
 		},
 	})
 }
 
-func testAccCheckDroneCronDestroy(s *terraform.State) error {
+func testAccCheckDroneSecretDestroy(s *terraform.State) error {
 	c := testAccProvider.Meta().(drone.Client)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "drone_cron" {
+		if rs.Type != "drone_secret" {
 			continue
 		}
 
@@ -52,26 +52,26 @@ func testAccCheckDroneCronDestroy(s *terraform.State) error {
 		repository := rs.Primary.Attributes["repository"]
 		owner, repo, err := utils.ParseRepo(repository)
 
-		err = c.CronDelete(owner, repo, name)
+		err = c.SecretDelete(owner, repo, name)
 		if err == nil {
-			return fmt.Errorf("Cron (%s/%s/%s) still exists.", owner, repo, name)
+			return fmt.Errorf("Secret (%s/%s/%s) still exists.", owner, repo, name)
 		}
 	}
 
 	return nil
 }
 
-func testAccCheckDroneCronConfigBasic(n string) string {
+func testAccCheckDroneSecretConfigBasic(n string) string {
 	return fmt.Sprintf(`
-	resource "drone_cron" "new" {
+	resource "drone_secret" "new" {
 		repository = "jimsheldon/drone-quickstart"
 		name = "%s"
-		event = "push"
+		value = "thisissecret"
 	}
 	`, n)
 }
 
-func testAccCheckDroneCronExists(n string) resource.TestCheckFunc {
+func testAccCheckDroneSecretExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 
