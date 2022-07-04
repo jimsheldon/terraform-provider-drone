@@ -33,7 +33,31 @@ func TestAccDroneRepoBasic(t *testing.T) {
 				Config: testAccCheckDroneRepoConfigBasic(rName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDroneRepoExists("drone_repo.new"),
-					resource.TestCheckResourceAttr("drone_repo.new", "configuration", rName+".yaml"),
+					resource.TestCheckResourceAttr("drone_repo.new",
+						"configuration",
+						rName+".yaml",
+					),
+					resource.TestCheckResourceAttr(
+						"drone_repo.new",
+						"visibility",
+						"private",
+					),
+					resource.TestCheckResourceAttr(
+						"drone_repo.new",
+						"timeout",
+						"60",
+					),
+					// these tests fail with "Attribute 'x' not found"
+					//					resource.TestCheckResourceAttr(
+					//						"drone_repo.new",
+					//						"protected",
+					//						"false",
+					//					),
+					//					resource.TestCheckResourceAttr(
+					//						"drone_repo.new",
+					//						"trusted",
+					//						"false",
+					//					),
 				),
 			},
 		},
