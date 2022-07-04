@@ -16,6 +16,7 @@ import (
 
 func resourceRepo() *schema.Resource {
 	return &schema.Resource{
+		Description: "Resource for managing a Drone repository",
 		Schema: map[string]*schema.Schema{
 			"cancel_pulls": {
 				Type:     schema.TypeBool,

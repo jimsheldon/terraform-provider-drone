@@ -14,6 +14,7 @@ import (
 
 func resourceUser() *schema.Resource {
 	return &schema.Resource{
+		Description: "Resource for creating a Drone user",
 		Schema: map[string]*schema.Schema{
 			"last_updated": {
 				Type:     schema.TypeString,

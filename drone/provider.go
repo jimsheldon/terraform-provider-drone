@@ -39,7 +39,9 @@ func Provider() *schema.Provider {
 			"drone_user":      resourceUser(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"drone_template": dataSourceTemplate(),
+			"drone_template":  dataSourceTemplate(),
+			"drone_user":      dataSourceUser(),
+			"drone_user_self": dataSourceUserSelf(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

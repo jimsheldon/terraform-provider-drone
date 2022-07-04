@@ -11,6 +11,7 @@ import (
 
 func dataSourceTemplate() *schema.Resource {
 	return &schema.Resource{
+		Description: "Data source for retrieving a Drone template",
 		ReadContext: dataSourceTemplateRead,
 		Schema: map[string]*schema.Schema{
 			"name": {

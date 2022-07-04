@@ -16,6 +16,7 @@ import (
 
 func resourceSecret() *schema.Resource {
 	return &schema.Resource{
+		Description: "Resource for creating a Drone repository secret",
 		Schema: map[string]*schema.Schema{
 			"last_updated": {
 				Type:     schema.TypeString,
