@@ -2,6 +2,7 @@ package drone
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"terraform-provider-drone/drone/utils"
@@ -13,6 +14,11 @@ import (
 )
 
 func TestAccDroneCronBasic(t *testing.T) {
+	scmAvail := os.Getenv("SCM_AVAIL")
+	if scmAvail == "" {
+		t.Skip("set SCM_AVAIL to run this test")
+	}
+
 	// generate a random name to avoid collisions from multiple concurrent tests.
 	rName := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
 
