@@ -39,13 +39,18 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, m inter
 	namespace := d.Get("namespace").(string)
 
 	template, err := client.Template(namespace, name)
-	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  fmt.Sprintf("Template %s/%s not found", namespace, name),
-		Detail:   err.Error(),
-	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Template %s/%s not found", namespace, name),
+			Detail:   err.Error(),
+		})
 
-	readTemplate(d, template)
+		return diags
+	}
+
+	d.Set("name", template.Name)
+	d.Set("data", template.Data)
 
 	d.SetId(fmt.Sprintf("%s/%s", namespace, name))
 

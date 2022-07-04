@@ -88,11 +88,15 @@ func resourceOrgSecretRead(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	secret, err := client.OrgSecret(namespace, name)
-	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  fmt.Sprintf("Failed to read Drone Org Secret: %s/%s", namespace, name),
-		Detail:   err.Error(),
-	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Failed to read Drone Org Secret: %s/%s", namespace, name),
+			Detail:   err.Error(),
+		})
+
+		return diags
+	}
 
 	readOrgSecret(d, secret)
 

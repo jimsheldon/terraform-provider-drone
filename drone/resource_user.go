@@ -78,11 +78,15 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	var diags diag.Diagnostics
 
 	user, err := client.User(d.Id())
-	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  fmt.Sprintf("Failed to read Drone user with id: %s", d.Id()),
-		Detail:   err.Error(),
-	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Failed to read Drone user with id: %s", d.Id()),
+			Detail:   err.Error(),
+		})
+
+		return diags
+	}
 
 	readUser(d, user)
 

@@ -115,11 +115,15 @@ func resourceCronRead(ctx context.Context, d *schema.ResourceData, m interface{}
 	}
 
 	cron, err := client.Cron(owner, repo, name)
-	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  fmt.Sprintf("Failed to read Drone Cron: %s/%s/%s not found", owner, repo, name),
-		Detail:   err.Error(),
-	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Failed to read Drone Cron: %s/%s/%s not found", owner, repo, name),
+			Detail:   err.Error(),
+		})
+
+		return diags
+	}
 
 	readCron(d, owner, repo, cron)
 

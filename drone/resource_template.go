@@ -75,11 +75,15 @@ func resourceTemplateRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	template, err := client.Template(namespace, name)
-	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  fmt.Sprintf("Failed to read Drone Template: %s/%s", namespace, name),
-		Detail:   err.Error(),
-	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Failed to read Drone Template: %s/%s", namespace, name),
+			Detail:   err.Error(),
+		})
+
+		return diags
+	}
 
 	readTemplate(d, template)
 
