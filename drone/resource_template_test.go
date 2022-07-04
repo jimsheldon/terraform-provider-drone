@@ -54,7 +54,7 @@ func testAccCheckDroneTemplateConfigBasic(n string) string {
 	return fmt.Sprintf(`
 	resource "drone_template" "new" {
 		name = "%s.yaml"
-		namespace = "jimsheldon"
+		namespace = "test"
 		data = "kind: pipeline"
 	}
 	`, n)
