@@ -34,3 +34,8 @@ steps:
     TF_ACC: 1
   commands:
   - go test -v ./...
+
+- name: goreleaser
+  image: goreleaser/goreleaser:v1.10.1
+  commands:
+  - goreleaser release --skip-publish
