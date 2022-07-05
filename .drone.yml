@@ -44,7 +44,7 @@ steps:
     - refs/tags/v**
 
 - name: goreleaser
-  image: goreleaser/goreleaser:v1.10.1
+  image: goreleaser/goreleaser:v1.7.0
   environment:
     GITHUB_TOKEN:
       from_secret: github_token
