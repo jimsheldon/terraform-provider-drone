@@ -3,12 +3,12 @@
 page_title: "drone_template Resource - terraform-provider-drone"
 subcategory: ""
 description: |-
-  
+  Resource for creating a Drone template
 ---
 
 # drone_template (Resource)
 
-
+Resource for creating a Drone template
 
 
 

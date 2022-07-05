@@ -3,12 +3,12 @@
 page_title: "drone_cron Resource - terraform-provider-drone"
 subcategory: ""
 description: |-
-  
+  Resource for creating a Drone cronjob
 ---
 
 # drone_cron (Resource)
 
-
+Resource for creating a Drone cronjob
 
 
 

@@ -3,12 +3,12 @@
 page_title: "drone_repo Resource - terraform-provider-drone"
 subcategory: ""
 description: |-
-  
+  Resource for managing a Drone repository
 ---
 
 # drone_repo (Resource)
 
-
+Resource for managing a Drone repository
 
 
 

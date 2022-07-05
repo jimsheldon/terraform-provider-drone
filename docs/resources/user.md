@@ -3,12 +3,12 @@
 page_title: "drone_user Resource - terraform-provider-drone"
 subcategory: ""
 description: |-
-  
+  Resource for creating a Drone user
 ---
 
 # drone_user (Resource)
 
-
+Resource for creating a Drone user
 
 
 

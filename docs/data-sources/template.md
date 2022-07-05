@@ -3,12 +3,12 @@
 page_title: "drone_template Data Source - terraform-provider-drone"
 subcategory: ""
 description: |-
-  
+  Data source for retrieving a Drone template
 ---
 
 # drone_template (Data Source)
 
-
+Data source for retrieving a Drone template
 
 
 

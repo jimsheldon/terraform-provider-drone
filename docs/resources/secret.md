@@ -3,12 +3,12 @@
 page_title: "drone_secret Resource - terraform-provider-drone"
 subcategory: ""
 description: |-
-  
+  Resource for creating a Drone repository secret
 ---
 
 # drone_secret (Resource)
 
-
+Resource for creating a Drone repository secret
 
 
 

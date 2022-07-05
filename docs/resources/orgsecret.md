@@ -3,12 +3,12 @@
 page_title: "drone_orgsecret Resource - terraform-provider-drone"
 subcategory: ""
 description: |-
-  
+  Resource for creating a Drone organization secret
 ---
 
 # drone_orgsecret (Resource)
 
-
+Resource for creating a Drone organization secret
 
 
 
