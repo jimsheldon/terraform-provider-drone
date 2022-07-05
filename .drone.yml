@@ -39,3 +39,6 @@ steps:
   image: goreleaser/goreleaser:v1.10.1
   commands:
   - goreleaser release --skip-publish
+  when:
+    ref:
+    - refs/tags/v**
