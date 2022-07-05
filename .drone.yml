@@ -35,6 +35,14 @@ steps:
   commands:
   - go test -v ./...
 
+- name: fetch tags
+  image: alpine/git
+  commands:
+  - git fetch --tags
+  when:
+    ref:
+    - refs/tags/v**
+
 - name: goreleaser
   image: goreleaser/goreleaser:v1.10.1
   commands:
