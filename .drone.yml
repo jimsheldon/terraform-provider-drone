@@ -30,6 +30,7 @@ steps:
   environment:
     DRONE_SERVER: http://drone
     DRONE_TOKEN: 55241de264decc58e8a2b2d90728702c
+    DRONE_USER: test
     TF_ACC: 1
   commands:
   - go test -v ./...
