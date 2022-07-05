@@ -45,6 +45,11 @@ steps:
 
 - name: goreleaser
   image: goreleaser/goreleaser:v1.10.1
+  environment:
+    GITHUB_TOKEN:
+      from_secret: github_token
+    GPG_FINGERPRINT:
+      from_secret: gpg_fingerprint
   commands:
   - goreleaser release --skip-publish
   when:
