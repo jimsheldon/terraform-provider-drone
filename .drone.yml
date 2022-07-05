@@ -61,7 +61,7 @@ steps:
   - echo "hello world" > temp.txt
   - gpg --detach-sig --yes -v --output=/dev/null --pinentry-mode loopback --passphrase "$GPG_PASSWORD" temp.txt
   - rm temp.txt
-  - goreleaser release --skip-publish
+  - goreleaser release
   when:
     ref:
     - refs/tags/v**
