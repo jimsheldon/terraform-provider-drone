@@ -50,7 +50,10 @@ steps:
       from_secret: github_token
     GPG_FINGERPRINT:
       from_secret: gpg_fingerprint
+    GPG_PRIVATE_KEY:
+      from_secret: gpg_private_key
   commands:
+  - echo -e "$GPG_PRIVATE_KEY}" | gpg --import --batch --no-tty
   - goreleaser release --skip-publish
   when:
     ref:
