@@ -30,10 +30,23 @@ func TestAccDroneCronBasic(t *testing.T) {
 		CheckDestroy: testAccCheckDroneCronDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckDroneCronConfigBasic(rName),
+				Config: testAccCheckDroneCronConfigBasic(
+					testDroneUser,
+					"repository-1",
+					rName,
+				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDroneCronExists("drone_cron.new"),
-					resource.TestCheckResourceAttr("drone_cron.new", "name", rName),
+					testAccCheckDroneCronExists("drone_cron.cron"),
+					resource.TestCheckResourceAttr(
+						"drone_cron.cron",
+						"name",
+						rName,
+					),
+					resource.TestCheckResourceAttr(
+						"drone_cron.cron",
+						"repository",
+						fmt.Sprintf("%s/repository-1", testDroneUser),
+					),
 				),
 			},
 		},
@@ -61,14 +74,23 @@ func testAccCheckDroneCronDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDroneCronConfigBasic(n string) string {
+func testAccCheckDroneCronConfigBasic(user, repo, name string) string {
 	return fmt.Sprintf(`
-	resource "drone_cron" "new" {
-		repository = "jimsheldon/drone-quickstart"
-		name = "%s"
-		event = "push"
-	}
-	`, n)
+    resource "drone_repo" "repo" {
+      repository = "%s/%s"
+    }
+    
+    resource "drone_cron" "cron" {
+      repository = drone_repo.repo.repository
+      name       = "%s"
+			expr       = "@monthly"
+			event      = "push"
+    }
+    `,
+		user,
+		repo,
+		name,
+	)
 }
 
 func testAccCheckDroneCronExists(n string) resource.TestCheckFunc {

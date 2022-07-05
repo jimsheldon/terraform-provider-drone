@@ -20,10 +20,28 @@ func TestAccDroneTemplateBasic(t *testing.T) {
 		CheckDestroy: testAccCheckDroneTemplateDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckDroneTemplateConfigBasic(rName),
+				Config: testAccCheckDroneTemplateConfigBasic(
+					"test",
+					fmt.Sprintf("%s.yaml", rName),
+					"kind: pipeline",
+				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDroneTemplateExists("drone_template.new"),
-					resource.TestCheckResourceAttr("drone_template.new", "name", rName+".yaml"),
+					testAccCheckDroneTemplateExists("drone_template.template"),
+					resource.TestCheckResourceAttr(
+						"drone_template.template",
+						"name",
+						fmt.Sprintf("%s.yaml", rName),
+					),
+					resource.TestCheckResourceAttr(
+						"drone_template.template",
+						"namespace",
+						"test",
+					),
+					resource.TestCheckResourceAttr(
+						"drone_template.template",
+						"data",
+						"kind: pipeline",
+					),
 				),
 			},
 		},
@@ -50,14 +68,18 @@ func testAccCheckDroneTemplateDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDroneTemplateConfigBasic(n string) string {
+func testAccCheckDroneTemplateConfigBasic(namespace, name, data string) string {
 	return fmt.Sprintf(`
-	resource "drone_template" "new" {
-		name = "%s.yaml"
-		namespace = "test"
-		data = "kind: pipeline"
+	resource "drone_template" "template" {
+		namespace = "%s"
+		name = "%s"
+		data = "%s"
 	}
-	`, n)
+	`,
+		namespace,
+		name,
+		data,
+	)
 }
 
 func testAccCheckDroneTemplateExists(n string) resource.TestCheckFunc {

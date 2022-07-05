@@ -7,8 +7,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var testAccProviders map[string]*schema.Provider
-var testAccProvider *schema.Provider
+var (
+	testDroneUser    string = os.Getenv("DRONE_USER")
+	testAccProviders map[string]*schema.Provider
+	testAccProvider  *schema.Provider
+)
 
 func init() {
 	testAccProvider = Provider()
@@ -33,5 +36,8 @@ func testAccPreCheck(t *testing.T) {
 	}
 	if err := os.Getenv("DRONE_TOKEN"); err == "" {
 		t.Fatal("DRONE_TOKEN must be set for acceptance tests")
+	}
+	if v := os.Getenv("DRONE_USER"); v == "" {
+		t.Fatal("DRONE_USER must be set for acceptance tests")
 	}
 }

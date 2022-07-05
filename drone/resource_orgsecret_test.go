@@ -20,10 +20,28 @@ func TestAccDroneOrgsecretBasic(t *testing.T) {
 		CheckDestroy: testAccCheckDroneOrgsecretDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckDroneOrgsecretConfigBasic(rName),
+				Config: testAccCheckDroneOrgsecretConfigBasic(
+					"test",
+					rName,
+					"thisissecret",
+				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDroneOrgsecretExists("drone_orgsecret.new"),
-					resource.TestCheckResourceAttr("drone_orgsecret.new", "name", rName),
+					testAccCheckDroneOrgsecretExists("drone_orgsecret.secret"),
+					resource.TestCheckResourceAttr(
+						"drone_orgsecret.secret",
+						"name",
+						rName,
+					),
+					resource.TestCheckResourceAttr(
+						"drone_orgsecret.secret",
+						"namespace",
+						"test",
+					),
+					resource.TestCheckResourceAttr(
+						"drone_orgsecret.secret",
+						"value",
+						"thisissecret",
+					),
 				),
 			},
 		},
@@ -50,14 +68,18 @@ func testAccCheckDroneOrgsecretDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDroneOrgsecretConfigBasic(n string) string {
+func testAccCheckDroneOrgsecretConfigBasic(namespace, name, value string) string {
 	return fmt.Sprintf(`
-	resource "drone_orgsecret" "new" {
-		name = "%s"
-		namespace = "test"
-		value = "thisissecret"
+	resource "drone_orgsecret" "secret" {
+		namespace = "%s"
+		name      = "%s"
+		value     = "%s"
 	}
-	`, n)
+	`,
+		namespace,
+		name,
+		value,
+	)
 }
 
 func testAccCheckDroneOrgsecretExists(n string) resource.TestCheckFunc {

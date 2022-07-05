@@ -22,8 +22,12 @@ func TestAccDroneUserBasic(t *testing.T) {
 			{
 				Config: testAccCheckDroneUserConfigBasic(rName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDroneUserExists("drone_user.new"),
-					resource.TestCheckResourceAttr("drone_user.new", "login", rName),
+					testAccCheckDroneUserExists("drone_user.user"),
+					resource.TestCheckResourceAttr(
+						"drone_user.user",
+						"login",
+						rName,
+					),
 				),
 			},
 		},
@@ -51,7 +55,7 @@ func testAccCheckDroneUserDestroy(s *terraform.State) error {
 
 func testAccCheckDroneUserConfigBasic(n string) string {
 	return fmt.Sprintf(`
-	resource "drone_user" "new" {
+	resource "drone_user" "user" {
 		login = "%s"
 		active = true
 		admin = false

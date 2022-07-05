@@ -30,10 +30,29 @@ func TestAccDroneSecretBasic(t *testing.T) {
 		CheckDestroy: testAccCheckDroneSecretDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckDroneSecretConfigBasic(rName),
+				Config: testAccCheckDroneSecretConfigBasic(
+					testDroneUser,
+					"repository-1",
+					rName,
+					"thisissecret",
+				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDroneSecretExists("drone_secret.new"),
-					resource.TestCheckResourceAttr("drone_secret.new", "name", rName),
+					testAccCheckDroneSecretExists("drone_secret.secret"),
+					resource.TestCheckResourceAttr(
+						"drone_secret.secret",
+						"repository",
+						fmt.Sprintf("%s/repository-1", testDroneUser),
+					),
+					resource.TestCheckResourceAttr(
+						"drone_secret.secret",
+						"name",
+						rName,
+					),
+					resource.TestCheckResourceAttr(
+						"drone_secret.secret",
+						"value",
+						"thisissecret",
+					),
 				),
 			},
 		},
@@ -61,14 +80,23 @@ func testAccCheckDroneSecretDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDroneSecretConfigBasic(n string) string {
+func testAccCheckDroneSecretConfigBasic(user, repo, name, value string) string {
 	return fmt.Sprintf(`
-	resource "drone_secret" "new" {
-		repository = "jimsheldon/drone-quickstart"
-		name = "%s"
-		value = "thisissecret"
-	}
-	`, n)
+    resource "drone_repo" "repo" {
+		repository = "%s/%s"
+	  }
+	  
+	  resource "drone_secret" "secret" {
+		repository = drone_repo.repo.repository
+		name       = "%s"
+		value      = "%s"
+	  }
+	  `,
+		user,
+		repo,
+		name,
+		value,
+	)
 }
 
 func testAccCheckDroneSecretExists(n string) resource.TestCheckFunc {
