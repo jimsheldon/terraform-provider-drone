@@ -38,7 +38,6 @@ checksum:
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
   algorithm: sha256
-stdin: '{{ .Env.GPG_PASSWORD }}'
 signs:
   - artifacts: checksum
     args:
