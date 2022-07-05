@@ -44,7 +44,7 @@ steps:
     - refs/tags/v**
 
 - name: goreleaser
-  image: goreleaser/goreleaser:v1.7.0
+  image: goreleaser/goreleaser:v1.10.1
   environment:
     GITHUB_TOKEN:
       from_secret: github_token
@@ -56,7 +56,7 @@ steps:
   - apk update
   - apk add gpg-agent
   - echo -e "$GPG_PRIVATE_KEY}" | gpg --import --batch --no-tty
-  - goreleaser release --skip-publish
+  - goreleaser release --debug --skip-publish
   when:
     ref:
     - refs/tags/v**
