@@ -53,6 +53,8 @@ steps:
     GPG_PRIVATE_KEY:
       from_secret: gpg_private_key
   commands:
+  - apk update
+  - apk add gpg-agent
   - echo -e "$GPG_PRIVATE_KEY}" | gpg --import --batch --no-tty
   - goreleaser release --skip-publish
   when:
