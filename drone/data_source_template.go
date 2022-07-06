@@ -50,9 +50,7 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, m inter
 		return diags
 	}
 
-	d.Set("name", template.Name)
 	d.Set("data", template.Data)
-
 	d.SetId(fmt.Sprintf("%s/%s", namespace, name))
 
 	return diags
