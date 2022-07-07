@@ -2,7 +2,9 @@ package drone
 
 import (
 	"context"
-	"fmt"
+	"sort"
+
+	"terraform-provider-drone/drone/utils"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -18,21 +20,12 @@ func dataSourceTemplates() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"templates": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"data": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-					},
+			"names": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
+				Computed: true,
 			},
 		},
 	}
@@ -56,29 +49,18 @@ func dataSourceTemplatesRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diags
 	}
 
-	id := ""
-	dataTemplates := make([]interface{}, len(templates), len(templates))
+	id := make([]string, 0)
+	names := make([]string, 0)
 
-	for i, template := range templates {
-		id = id + template.Name
-		r := make(map[string]interface{})
-		r["name"] = template.Name
-		r["data"] = template.Data
-		dataTemplates[i] = r
+	for _, template := range templates {
+		id = append(id, template.Name)
+		names = append(names, template.Name)
 	}
 
-	d.Set("templates", dataTemplates)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Failed to set templates",
-			Detail:   err.Error(),
-		})
+	sort.Strings(names)
+	d.Set("names", names)
 
-		return diags
-	}
-
-	d.SetId(fmt.Sprintf("%s/%s", namespace, id))
+	d.SetId(utils.BuildChecksumID(id))
 
 	return diags
 }

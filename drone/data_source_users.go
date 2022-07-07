@@ -2,6 +2,9 @@ package drone
 
 import (
 	"context"
+	"sort"
+
+	"terraform-provider-drone/drone/utils"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -13,33 +16,12 @@ func dataSourceUsers() *schema.Resource {
 		Description: "Data source for retrieving all Drone users",
 		ReadContext: dataSourceUsersRead,
 		Schema: map[string]*schema.Schema{
-			"users": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"active": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"admin": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"email": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"login": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"machine": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-					},
+			"logins": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
+				Computed: true,
 			},
 		},
 	}
@@ -62,32 +44,18 @@ func dataSourceUsersRead(ctx context.Context, d *schema.ResourceData, m interfac
 		return diags
 	}
 
-	id := ""
-	dataUsers := make([]interface{}, len(users), len(users))
+	id := make([]string, 0)
+	logins := make([]string, 0)
 
-	for i, user := range users {
-		id = id + user.Login
-		r := make(map[string]interface{})
-		r["active"] = user.Active
-		r["admin"] = user.Admin
-		r["email"] = user.Email
-		r["login"] = user.Login
-		r["machine"] = user.Machine
-		dataUsers[i] = r
+	for _, user := range users {
+		id = append(id, user.Login)
+		logins = append(logins, user.Login)
 	}
 
-	d.Set("users", dataUsers)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Failed to set users",
-			Detail:   err.Error(),
-		})
+	sort.Strings(logins)
+	d.Set("logins", logins)
 
-		return diags
-	}
-
-	d.SetId(id)
+	d.SetId(utils.BuildChecksumID(id))
 
 	return diags
 }
